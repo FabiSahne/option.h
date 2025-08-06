@@ -1,6 +1,6 @@
-# Option<T> for C
+# Option\<T\> for C
 
-A lightweight, macro-generated Option<T> implementation for C that provides Rust-like optional value handling.
+A lightweight, macro-generated Option\<T\> implementation for C that provides Rust-like optional value handling.
 
 ## Overview
 
