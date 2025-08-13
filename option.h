@@ -133,7 +133,7 @@ static inline Option_##name option_##name##_replace(Option_##name* o, type value
 }\
 \
 static inline int option_##name##_eq_with(const Option_##name* o, const Option_##name* other, int (*eq)(const type*, const type*)) {\
-    return o->tag == Some && other->tag == Some ? eq((const type*)&o->payload, (const type*)&other->payload) : o->tag == other->tag;\
+    return (o->tag == Some && other->tag == Some) ? eq((const type*)&o->payload, (const type*)&other->payload) : (o->tag == other->tag);\
 }\
 \
 static inline int option_##name##_cmp_with(const Option_##name* o, const Option_##name* other, int (*cmp)(const type*, const type*)) {\

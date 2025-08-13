@@ -127,6 +127,21 @@ If `Some`, returns the contained value, otherwise if `None`, returns the value t
 int value = option_int_unwrap_or_zeroed(opt); // 0 if opt is None, else opt.payload
 ```
 
+#### `<type> option_<type>_unwrap_unchecked(option)`
+Returns the contained `Some` value, without checking that the value is not `None`
+
+##### Safety
+Calling this on `None` is _undefined behavior_.
+
+```c
+Option_str x = option_str_some("air");
+char* unwrapped = option_str_unwrap_unchecked(x); // "air"
+x = option_str_none();
+unwrapped = option_str_unwrap_unchecked(x); // UNDEFINED BEHAVIOR
+// using `unwrapped` now may crash the program
+```
+
+
 #### `<type>* option_<type>_as_ptr(option*)`
 Returns a pointer to the contained value, or NULL if None.
 
@@ -147,15 +162,15 @@ Arguments passed to `and` are eagerly evaluated; if you are passing the result o
 ```c
 Option_int x = option_int_some(2);
 Option_int y = option_int_none();
-assert(option_int_eq(option_int_and(x, y), option_int_none()));
+assert(option_int_is_none(option_int_and(x, y)));
 
 Option_double x = option_double_none();
 Option_double y = option_double_some(1.3);
-assert(option_double_eq(option_double_and(x, y), option_double_none()));
+assert(option_double_is_none(option_double_and(x, y)));
 
 Option_char x = option_char_some('a');
 Option_char y = option_char_some('b');
-assert(option_char_eq(option_char_and(x, y), option_char_some('b')));
+assert(option_char_unwrap(option_char_and(x, y)) == 'b');
 ```
 
 #### `Option_<type> option_<type>_and_then(option, option (*f)(<type>))`
@@ -305,14 +320,24 @@ assert(option_int_unwrap(x) == 5);
 assert(option_int_unwrap(old) == 2);
 
 x = option_int_none();
-prev = option_int_replace(&x, 3);
+old = option_int_replace(&x, 3);
 assert(option_int_unwrap(x) == 3);
-assert(option_int_is_none(&prev));
+assert(option_int_is_none(&old));
 ```
 
 ### Comparisons
 #### `int option_<type>_eq_with(const option*, const option*, int (*eq)(const <type>*, const <type>*))`
 Checks for equality using the function `eq` if both options are `Some`, which takes references of the containing types.
+
+```c
+Option_str a = option_str_some("Hello!");
+Option_str b = option_str_none();
+assert(!option_str_eq_with(&a, &b, str_eq_fn));
+
+a = option_str_some("Hello!");
+b = option_str_some("Hello!");
+assert(option_str_eq_with(&a, &b, str_eq_fn));
+```
 
 #### `int option_<type>_cmp_with(const option*, const option*, int (*cmp)(const <type>*, const <type>*))`
 Compares the two options and returns an integer indicating the result of the comparison, as follows:
