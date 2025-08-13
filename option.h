@@ -143,14 +143,18 @@ static inline int option_##name##_eq_with(const Option_##name* o, const Option_#
 static inline int option_##name##_cmp_with(const Option_##name* o, const Option_##name* other, int (*cmp)(const type*, const type*)) {\
     if (o->tag == Some) {\
         if (other->tag == Some) {\
+            /* (Some, Some) */\
             return cmp((const type*)&o->payload, (const type*)&other->payload);\
         } else {\
+            /* (Some, None) */\
             return 1;\
         }\
     } else {\
         if (other->tag == Some) {\
+            /* (None, Some) */\
             return -1;\
         } else {\
+            /* (None, None) */\
             return 0;\
         }\
     }\

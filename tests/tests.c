@@ -18,7 +18,7 @@ if (fn) {\
 
 #define ASSERT(expr) if (!(expr)) return false
 
-bool is_some() {
+static bool is_some() {
     Option_int x = option_int_some(2);
     ASSERT(option_int_is_some(&x));
     
@@ -28,11 +28,11 @@ bool is_some() {
     return true;
 }
 
-int greater_than_one(int* x) {
+static inline int greater_than_one(int* x) {
     return *x > 1;
 }
 
-bool is_some_and() {
+static bool is_some_and() {
     Option_int x = option_int_some(2);
     ASSERT(option_int_is_some_and(&x, greater_than_one));
     
@@ -45,7 +45,7 @@ bool is_some_and() {
     return true;
 }
 
-bool is_none() {
+static bool is_none() {
     Option_int x = option_int_some(2);
     ASSERT(!option_int_is_none(&x));
     
@@ -55,7 +55,7 @@ bool is_none() {
     return true;
 }
 
-bool is_none_or() {
+static bool is_none_or() {
     Option_int x = option_int_some(2);
     ASSERT(option_int_is_none_or(&x, greater_than_one));
     
@@ -68,7 +68,7 @@ bool is_none_or() {
     return true;
 }
 
-bool as_ptr() {
+static bool as_ptr() {
     Option_int x = option_int_some(2);
     int* inner_x = option_int_as_ptr(&x);
     *inner_x = 5;
@@ -81,7 +81,7 @@ bool as_ptr() {
     return true;
 }
 
-bool expect() {
+static bool expect() {
     Option_str x = option_str_some("value");
     char* expected = option_str_expect(x, "fruits are healthy");
     ASSERT(strcmp(expected, "value") == 0);
@@ -89,7 +89,7 @@ bool expect() {
     return true;
 }
 
-bool unwrap() {
+static bool unwrap() {
     Option_str x = option_str_some("air");
     char* unwrapped = option_str_unwrap(x);
     ASSERT(strcmp(unwrapped, "air") == 0);
@@ -97,7 +97,7 @@ bool unwrap() {
     return true;
 }
 
-bool unwrap_or() {
+static bool unwrap_or() {
     Option_str car = option_str_some("car");
     char* unwrapped = option_str_unwrap_or(car, "bike");
     ASSERT(strcmp(unwrapped, "car") == 0);
@@ -109,9 +109,9 @@ bool unwrap_or() {
     return true;
 }
 
-int ten_times_two() { return 10 * 2; }
+static inline int ten_times_two() { return 10 * 2; }
 
-bool unwrap_or_else() {
+static bool unwrap_or_else() {
     Option_int x = option_int_some(4);
     ASSERT(option_int_unwrap_or_else(x, ten_times_two) == 4);
 
@@ -121,7 +121,7 @@ bool unwrap_or_else() {
     return true;
 }
 
-bool unwrap_unchecked() {
+static bool unwrap_unchecked() {
     Option_str x = option_str_some("air");
     char* unwrapped = option_str_unwrap_unchecked(x);
     ASSERT(strcmp(unwrapped, "air") == 0);
@@ -133,7 +133,7 @@ bool unwrap_unchecked() {
     return true;
 }
 
-bool unwrap_or_zeroed() {
+static bool unwrap_or_zeroed() {
     Option_int x = option_int_none();
     Option_int y = option_int_some(12);
     ASSERT(option_int_unwrap_or_zeroed(x) == 0);
@@ -142,12 +142,12 @@ bool unwrap_or_zeroed() {
     return true;
 }
 
-char* halve(char* str) {
+static inline char* halve(char* str) {
     int len = strlen(str) / 2;
     return str + len;
 }
 
-bool map() {
+static bool map() {
     Option_str maybe_some_string = option_str_some("Hello, World!");
     Option_str maybe_some_other_str = option_str_map(maybe_some_string, halve);
     char* unwrapped = option_str_unwrap(maybe_some_other_str);
@@ -157,7 +157,7 @@ bool map() {
     return true;
 }
 
-bool and() {
+static bool and() {
     Option_int x = option_int_some(2);
     Option_int y = option_int_none();
     Option_int x_and_y = option_int_and(x, y);
@@ -176,7 +176,7 @@ bool and() {
     return true;
 }
 
-Option_int checked_square(int x) {
+static inline Option_int checked_square(int x) {
     if (x > 46340) // sqrt(INT_MAX)
     {
         return option_int_none();
@@ -185,7 +185,7 @@ Option_int checked_square(int x) {
     }
 }
 
-bool and_then() {
+static bool and_then() {
     Option_int x = option_int_some(2);
     Option_int squared = option_int_and_then(x, checked_square);
     ASSERT(option_int_unwrap(squared) == 4);
@@ -201,7 +201,7 @@ bool and_then() {
     return true;
 }
 
-bool or() {
+static bool or() {
     Option_int x = option_int_some(2);
     Option_int y = option_int_none();
     Option_int x_or_y = option_int_or(x, y);
@@ -225,14 +225,14 @@ bool or() {
 }
 
 
-Option_str nobody() { return option_str_none(); }
-Option_str vikings() {return option_str_some("vikings"); }
+static inline Option_str nobody() { return option_str_none(); }
+static inline Option_str vikings() {return option_str_some("vikings"); }
 
-int str_eq_fn(const char** a, const char** b) {
+static inline int str_eq_fn(const char** a, const char** b) {
     return strcmp(*a, *b) == 0;
 }
 
-bool or_else() {
+static bool or_else() {
     Option_str barbs = option_str_some("barbarians");
     Option_str barbs_or_vikings = option_str_or_else(barbs, vikings);
     ASSERT(strcmp(option_str_unwrap(barbs_or_vikings), "barbarians") == 0);
@@ -248,11 +248,11 @@ bool or_else() {
     return true;
 }
 
-int is_even(const int* n) {
+static inline int is_even(const int* n) {
     return *n % 2 == 0;
 }
 
-bool filter() {
+static bool filter() {
     Option_int x = option_int_none();
     Option_int filtered = option_int_filter(x, is_even);
     ASSERT(option_int_is_none(&filtered));
@@ -268,7 +268,7 @@ bool filter() {
     return true;
 }
 
-bool insert() {
+static bool insert() {
     Option_int opt = option_int_none();
     int* val = option_int_insert(&opt, 1);
     ASSERT(*val == 1);
@@ -283,7 +283,7 @@ bool insert() {
     return true;
 }
 
-bool get_or_insert() {
+static bool get_or_insert() {
     Option_int x = option_int_none();
     {
         int* y = option_int_get_or_insert(&x, 5);
@@ -295,7 +295,7 @@ bool get_or_insert() {
     return true;
 }
 
-bool take() {
+static bool take() {
     Option_int x = option_int_some(2);
     Option_int y = option_int_take(&x);
     ASSERT(option_int_is_none(&x));
@@ -309,14 +309,13 @@ bool take() {
     return true;
 }
 
-int add_one_if_even(int* v) { 
+static inline int is_odd(int* v) { return *v % 2 == 1; }
+static inline int add_one_if_even(int* v) { 
     if (*v % 2 == 0) *v += 1;
     return false;
 }
 
-int is_odd(int* v) { return *v % 2 == 1; }
-
-bool take_if() {
+static bool take_if() {
     Option_int x = option_int_some(2);
     Option_int prev = option_int_take_if(&x, add_one_if_even);
     ASSERT(option_int_unwrap(x) == 3);
@@ -329,7 +328,7 @@ bool take_if() {
     return true;
 }
 
-bool replace() {
+static bool replace() {
     Option_int x = option_int_some(2);
     Option_int old = option_int_replace(&x, 5);
     ASSERT(option_int_unwrap(x) == 5);
@@ -345,7 +344,7 @@ bool replace() {
 
 
 
-bool eq_with() {
+static bool eq_with() {
     Option_str a = option_str_some("Hello!");
     Option_str b = option_str_none();
     ASSERT(!option_str_eq_with(&a, &b, str_eq_fn));
@@ -357,11 +356,11 @@ bool eq_with() {
     return true;
 }
 
-int int_cmp(const int* a, const int* b) {
+static inline int int_cmp(const int* a, const int* b) {
     return *a - *b;
 }
 
-bool cmp_with() {
+static bool cmp_with() {
     Option_int a = option_int_some(3);
     Option_int b = option_int_none();
     ASSERT(option_int_cmp_with(&a, &b, int_cmp) > 0);
@@ -405,4 +404,5 @@ int main() {
     TEST(replace());
 
     TEST(eq_with());
+    TEST(cmp_with());
 }

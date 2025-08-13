@@ -56,36 +56,58 @@ Option_int opt = option_int_none();
 Returns 1 if the Option contains a `Some` value.
 
 ```c
-if (option_int_is_some(&opt)) {
-    // Handle Some case
-}
+Option_int x = option_int_some(2);
+assert(option_int_is_some(&x));
+
+x = option_int_none();
+assert(!option_int_is_some(&x));
 ```
 
-#### `int option_<type>_is_some_and(option*, int (*f)(const <type>*))`
+#### `int option_<type>_is_some_and(option*, int (*f)(<type>*))`
 Returns 1 if the Option contains a `Some` value and the value inside of it matches a predicate.
 
 ```c
-if (option_int_is_some_and(&opt, pred)) {
-    // Handle Some case if pred(&opt->payload) is true
+static inline int greater_than_one(int* x) {
+    return *x > 1;
 }
+
+Option_int x = option_int_some(2);
+assert(option_int_is_some_and(&x, greater_than_one));
+
+x = option_int_some(0);
+assert(!option_int_is_some_and(&x, greater_than_one));
+
+x = option_int_none();
+assert(!option_int_is_some_and(&x, greater_than_one));
 ```
 
 #### `int option_<type>_is_none(option*)`
 Returns 1 if the Option is a `None` value.
 
 ```c
-if (option_int_is_none(&opt)) {
-    // Handle None case
-}
+Option_int x = option_int_some(2);
+assert(!option_int_is_none(&x));
+
+x = option_int_none();
+assert(option_int_is_none(&x));
 ```
 
-#### `int option_<type>_is_none_or(option*, int (*f)(const <type>*))`
+#### `int option_<type>_is_none_or(option*, int (*f)(<type>*))`
 Returns 1 if the Option is a `None` value, or the value inside of it matches a predicate.
 
 ```c
-if (option_int_is_none_or(&opt, pred)) {
-    // Handle None case or if pred(&opt->payload) is true
+static inline int greater_than_one(int* x) {
+    return *x > 1;
 }
+
+Option_int x = option_int_some(2);
+assert(option_int_is_none_or(&x, greater_than_one));
+
+x = option_int_some(0);
+assert(!option_int_is_none_or(&x, greater_than_one));
+
+x = option_int_none();
+assert(option_int_is_none_or(&x, greater_than_one));
 ```
 
 ### Extracting Values
@@ -98,7 +120,9 @@ Because this function may abort the program, its use is generally discouraged.
 Instead, prefer to handle the `None` case explicitly, or call `option_<type>_unwrap_or`, `option_<type>_unwrap_or_else`, or `option_<type>_unwrap_or_zeroed`
 
 ```c
-int value = option_int_unwrap(opt); // Aborts if opt is None
+Option_str x = option_str_some("air");
+char* unwrapped = option_str_unwrap(x);
+assert(strcmp(unwrapped, "air") == 0);
 ```
 
 #### `<type> option_<type>_unwrap_or(option, <type> fallback)`
@@ -107,15 +131,26 @@ Returns the contained `Some` value or a provided fallback.
 Arguments passed to `unwrap_or` are eagerly evaluated; if you are passing the result of a function call, it is recommended to use `unwrap_or_else`, which is lazily evaluated.
 
 ```c
-int value = option_int_unwrap_or(opt, 2); // 2 if opt is None, else opt.payload
+Option_str car = option_str_some("car");
+char* unwrapped = option_str_unwrap_or(car, "bike");
+assert(strcmp(unwrapped, "car") == 0);
+
+car = option_str_none();
+unwrapped = option_str_unwrap_or(car, "bike");
+assert(strcmp(unwrapped, "bike") == 0);
 ```
 
 #### `<type> option_<type>_unwrap_or_else(option, <type> (*f)())`
 Returns the contained `Some` value or computes it from a function.
 
 ```c
-int compute() { /*...*/ }
-int value = option_int_unwrap_or_else(opt, compute); // result of `compute` if opt is None, else opt.payload
+static inline int ten_times_two() { return 10 * 2; }
+
+Option_int x = option_int_some(4);
+assert(option_int_unwrap_or_else(x, ten_times_two) == 4);
+
+x = option_int_none();
+assert(option_int_unwrap_or_else(x, ten_times_two) == 20);
 ```
 
 #### `<type> option_<type>_unwrap_or_zeroed(option)`
@@ -124,7 +159,10 @@ Returns the contained `Some` value or zero.
 If `Some`, returns the contained value, otherwise if `None`, returns the value type zeroed.
 
 ```c
-int value = option_int_unwrap_or_zeroed(opt); // 0 if opt is None, else opt.payload
+Option_int x = option_int_none();
+Option_int y = option_int_some(12);
+assert(option_int_unwrap_or_zeroed(x) == 0);
+assert(option_int_unwrap_or_zeroed(y) == 12);
 ```
 
 #### `<type> option_<type>_unwrap_unchecked(option)`
@@ -138,7 +176,7 @@ Option_str x = option_str_some("air");
 char* unwrapped = option_str_unwrap_unchecked(x); // "air"
 x = option_str_none();
 unwrapped = option_str_unwrap_unchecked(x); // UNDEFINED BEHAVIOR
-// using `unwrapped` now may crash the program
+// assert(strcmp(unwrapped, "air") == 0); // MAYBE TRUE, MAYBE FALSE, MAY CRASH
 ```
 
 
@@ -146,10 +184,14 @@ unwrapped = option_str_unwrap_unchecked(x); // UNDEFINED BEHAVIOR
 Returns a pointer to the contained value, or NULL if None.
 
 ```c
-int* ptr = option_int_as_ptr(&opt);
-if (ptr != NULL) {
-    printf("Value: %d\n", *ptr);
-}
+Option_int x = option_int_some(2);
+int* inner_x = option_int_as_ptr(&x);
+*inner_x = 5;
+assert(option_int_unwrap(x) == 5);
+
+x = option_int_none();
+inner_x = option_int_as_ptr(&x);
+assert(inner_x == NULL);
 ```
 
 ### Functional Operations
@@ -162,26 +204,44 @@ Arguments passed to `and` are eagerly evaluated; if you are passing the result o
 ```c
 Option_int x = option_int_some(2);
 Option_int y = option_int_none();
-assert(option_int_is_none(option_int_and(x, y)));
+Option_int x_and_y = option_int_and(x, y);
+assert(option_int_is_none(&x_and_y));
 
-Option_double x = option_double_none();
-Option_double y = option_double_some(1.3);
-assert(option_double_is_none(option_double_and(x, y)));
+Option_double a = option_double_none();
+Option_double b = option_double_some(1.3);
+Option_double a_and_b = option_double_and(a, b);
+assert(option_double_is_none(&a_and_b));
 
-Option_char x = option_char_some('a');
-Option_char y = option_char_some('b');
-assert(option_char_unwrap(option_char_and(x, y)) == 'b');
+Option_char one = option_char_some('a');
+Option_char two = option_char_some('b');
+Option_char one_and_two = option_char_and(one, two);
+assert(option_char_unwrap(one_and_two) == 'b');
 ```
 
 #### `Option_<type> option_<type>_and_then(option, option (*f)(<type>))`
 Applies a function that returns an Option to the contained value (if any).
 
 ```c
-Option_int double_if_positive(int x) {
-    return x > 0 ? option_int_some(x * 2) : option_int_none();
+static inline Option_int checked_square(int x) {
+    if (x > 46340) // sqrt(INT_MAX)
+    {
+        return option_int_none();
+    } else {
+        return option_int_some(x * x);
+    }
 }
 
-Option_int result = option_int_and_then(opt, double_if_positive);
+Option_int x = option_int_some(2);
+Option_int squared = option_int_and_then(x, checked_square);
+assert(option_int_unwrap(squared) == 4);
+
+x = option_int_some(1000000);
+squared = option_int_and_then(x, checked_square);
+assert(option_int_is_none(&squared)); // Overflowed
+
+x = option_int_none();
+squared = option_int_and_then(x, checked_square);
+assert(option_int_is_none(&squared));
 ```
 
 #### `Option_<type> option_<type>_or(option, option)`
@@ -192,42 +252,58 @@ Arguments passed to `or` are eagerly evaluated; if you are passing the result of
 ```c
 Option_int x = option_int_some(2);
 Option_int y = option_int_none();
-assert(option_int_eq_with(option_int_or(x, y), option_int_some(2), int_eq_fn));
+Option_int x_or_y = option_int_or(x, y);
+assert(option_int_unwrap(x_or_y) == 2);
 
-Option_double x = option_double_none();
-Option_double y = option_double_some(1.3);
-assert(option_double_eq_with(option_double_or(x, y), option_double_some(1.3), double_eq_fn));
+Option_double a = option_double_none();
+Option_double b = option_double_some(1.3);
+Option_double a_or_b = option_double_or(a, b);
+assert(option_double_unwrap(a_or_b) == 1.3);
 
-Option_char x = option_char_some('a');
-Option_char y = option_char_some('b');
-assert(option_char_eq_with(option_char_or(x, y), option_char_some('a'), char_eq_fn));
+Option_char one = option_char_some('a');
+Option_char two = option_char_some('b');
+Option_char one_or_two = option_char_or(one, two);
+assert(option_char_unwrap(one_or_two) == 'a');
 
-Option_int x = option_int_none();
-Option_int y = option_int_none();
-assert(option_int_eq_with(option_int_or(x, y), option_int_none(), int_eq_fn));
+x = option_int_none();
+x_or_y = option_int_or(x, y);
+assert(option_int_is_none(&x_or_y));
 ```
 
 #### `Option_<type> option_<type>_or_else(option, option (*f)())`
 Returns the option if it contains a value, otherwise calls `f` and returns the result.
 
 ```c
-Option_str nobody() { return option_str_none(); }
-Option_str vikings() {return option_str_some("vikings"); }
+static inline Option_str nobody() { return option_str_none(); }
+static inline Option_str vikings() {return option_str_some("vikings"); }
 
-assert(option_str_eq_with(&option_str_or_else(option_str_some("barbarians"), vikings), &option_str_some("barbarians"), str_eq_fn));
-assert(option_str_eq_with(&option_str_or_else(option_str_none(), vikings), &option_str_some("vikings"), str_eq_fn));
-assert(option_str_eq_with(&option_str_or_else(option_str_none(), nobody), &option_str_none(), str_eq_fn));
+Option_str barbs = option_str_some("barbarians");
+Option_str barbs_or_vikings = option_str_or_else(barbs, vikings);
+assert(strcmp(option_str_unwrap(barbs_or_vikings), "barbarians") == 0);
+
+barbs = option_str_none();
+barbs_or_vikings = option_str_or_else(barbs, vikings);
+assert(strcmp(option_str_unwrap(barbs_or_vikings), "vikings") == 0);
+
+barbs = option_str_none();
+barbs_or_vikings = option_str_or_else(barbs, nobody);
+assert(option_str_is_none(&barbs_or_vikings));
 ```
 
 #### `Option_<type> option_<type>_map(option, <type> (*f)(<type>))`
 Applies a function to the contained value (if any) and wraps the result in an Option.
 
 ```c
-int double_value(int x) {
-    return x * 2;
+static inline char* halve(char* str) {
+    int len = strlen(str) / 2;
+    return str + len;
 }
 
-Option_int result = option_int_map(opt, double_value);
+Option_str maybe_some_string = option_str_some("Hello, World!");
+Option_str maybe_some_other_str = option_str_map(maybe_some_string, halve);
+char* unwrapped = option_str_unwrap(maybe_some_other_str);
+
+assert(strcmp(unwrapped, " World!") == 0);
 ```
 
 #### `Option_<type> option_<type>_filter(option, int (*pred)(const <type>*))`
@@ -236,13 +312,21 @@ Returns `None` if the option is `None`, otherwise calls the predicate with the w
 - `None` if the predicate return `false`
 
 ```c
-int is_even(const int* n) {
+static inline int is_even(const int* n) {
     return *n % 2 == 0;
 }
 
-assert(option_int_eq_with(&option_int_filter(option_int_none(), is_even), &option_int_none(), int_eq_fn));
-assert(option_int_eq_with(&option_int_filter(option_int_some(3), is_even), &option_int_none(), int_eq_fn));
-assert(option_int_eq_with(&option_int_filter(option_int_some(2), is_even), &option_int_some(2), int_eq_fn));
+Option_int x = option_int_none();
+Option_int filtered = option_int_filter(x, is_even);
+assert(option_int_is_none(&filtered));
+
+x = option_int_some(3);
+filtered = option_int_filter(x, is_even);
+assert(option_int_is_none(&filtered));
+
+x = option_int_some(4);
+filtered = option_int_filter(x, is_even);
+assert(option_int_is_some(&filtered));
 ```
 
 #### `<type>* option_<type>_insert(option*, <type> value)`
@@ -257,10 +341,12 @@ Option_int opt = option_int_none();
 int* val = option_int_insert(&opt, 1);
 assert(*val == 1);
 assert(option_int_unwrap(opt) == 1);
+
 val = option_int_insert(&opt, 2);
 assert(*val == 2);
+
 *val = 3;
-assert(option_int_unwrap(opt) == 3); 
+assert(option_int_unwrap(opt) == 3);
 ```
 
 #### `<type>* option_<type>_get_or_insert(option*, <type> value)`
@@ -284,8 +370,13 @@ Takes the value out of option, leaving a `None` in its place.
 ```c
 Option_int x = option_int_some(2);
 Option_int y = option_int_take(&x);
-assert(option_int_eq_with(&x, &option_int_none(), int_eq_fn));
-assert(option_int_eq_with(&y, &option_int_some(2), int_eq_fn));
+assert(option_int_is_none(&x));
+assert(option_int_unwrap(y) == 2);
+
+x = option_int_none();
+y = option_int_take(&x);
+assert(option_int_is_none(&x));
+assert(option_int_is_none(&y));
 ```
 
 #### `Option_<type> option_<type>_take_if(option*, int (*pred)(const <type>*))`
@@ -294,11 +385,11 @@ Takes the value out of option, but only if the predicate evaluates to `true` on 
 In other words, replaces the option with `None` if the predicates returns `true`. This operates similar to `option_<type>_take` but conditional.
 
 ```c
-int add_one_if_even(int* v) { 
+static inline int is_odd(int* v) { return *v % 2 == 1; }
+static inline int add_one_if_even(int* v) { 
     if (*v % 2 == 0) *v += 1;
     return false;
 }
-int is_odd(int* v) { return *v % 2 == 1; }
 
 Option_int x = option_int_some(2);
 Option_int prev = option_int_take_if(&x, add_one_if_even);
@@ -345,6 +436,19 @@ Compares the two options and returns an integer indicating the result of the com
 - a negative value if the first option is less than the second one ((Some(...), None), or `cmp` returned a negative value)
 - a positive value if the first option is greater than the second one ((None, Some(...)), or `cmp` returned a positive value)
 
+```c
+Option_int a = option_int_some(3);
+Option_int b = option_int_none();
+assert(option_int_cmp_with(&a, &b, int_cmp_fn) > 0);
+
+b = option_int_some(5);
+assert(option_int_cmp_with(&a, &b, int_cmp_fn) < 0);
+
+a = option_int_none();
+b = option_int_none();
+assert(option_int_cmp_with(&a, &b, int_cmp_fn) == 0);
+```
+
 ## Pre-defined Types
 
 The following Option types are pre-generated and ready to use:
@@ -389,10 +493,11 @@ Option_point opt_point = option_point_some(p);
 
 You can also rename existing types.
 
-For example, if you think `Option_unsigned_long_long` is too long:
+For example, if you think `option_unsigned_long_long_get_or_insert(&some_opt)` is too long
 ```c
-OPTION(unsigned long long, ull); // -> becomes Option_ull
+OPTION(unsigned long long, ull); // -> Option_ull
 ```
+will change that to `option_ull_get_or_insert(&some_opt)`.
 
 
 ## Examples
