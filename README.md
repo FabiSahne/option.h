@@ -181,11 +181,11 @@ assert(option_int_eq_with(option_int_or(x, y), option_int_some(2), int_eq_fn));
 
 Option_double x = option_double_none();
 Option_double y = option_double_some(1.3);
-assert(option_double_eq_with(option_double_and(x, y), option_double_some(1.3), double_eq_fn));
+assert(option_double_eq_with(option_double_or(x, y), option_double_some(1.3), double_eq_fn));
 
 Option_char x = option_char_some('a');
 Option_char y = option_char_some('b');
-assert(option_char_eq_with(option_char_and(x, y), option_char_some('a'), char_eq_fn));
+assert(option_char_eq_with(option_char_or(x, y), option_char_some('a'), char_eq_fn));
 
 Option_int x = option_int_none();
 Option_int y = option_int_none();
@@ -199,9 +199,9 @@ Returns the option if it contains a value, otherwise calls `f` and returns the r
 Option_str nobody() { return option_str_none(); }
 Option_str vikings() {return option_str_some("vikings"); }
 
-assert(option_str_eq_with(option_str_or_else(option_str_some("barbarians"), vikings), str_eq_fn), option_str_some("barbarians"));
-assert(option_str_eq_with(option_str_or_else(option_str_none(), vikings), str_eq_fn), option_str_some("vikings"));
-assert(option_str_eq_with(option_str_or_else(option_str_none(), nobody), str_eq_fn), option_str_none());
+assert(option_str_eq_with(&option_str_or_else(option_str_some("barbarians"), vikings), &option_str_some("barbarians"), str_eq_fn));
+assert(option_str_eq_with(&option_str_or_else(option_str_none(), vikings), &option_str_some("vikings"), str_eq_fn));
+assert(option_str_eq_with(&option_str_or_else(option_str_none(), nobody), &option_str_none(), str_eq_fn));
 ```
 
 #### `Option_<type> option_<type>_map(option, <type> (*f)(<type>))`
@@ -279,11 +279,11 @@ Takes the value out of option, but only if the predicate evaluates to `true` on 
 In other words, replaces the option with `None` if the predicates returns `true`. This operates similar to `option_<type>_take` but conditional.
 
 ```c
-int add_one_if_even(const int* v) { 
+int add_one_if_even(int* v) { 
     if (*v % 2 == 0) *v += 1;
     return false;
 }
-int is_odd(const int* v) { return *v % 2 == 1; }
+int is_odd(int* v) { return *v % 2 == 1; }
 
 Option_int x = option_int_some(2);
 Option_int prev = option_int_take_if(&x, add_one_if_even);

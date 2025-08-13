@@ -35,12 +35,12 @@ static inline int option_##name##_is_none(const Option_##name* o) {\
     return o->tag == None;\
 }\
 \
-static inline int option_##name##_is_some_and(const Option_##name* o, int (*f)(const type*)) {\
-    return o->tag == Some && f((const type*)&o->payload);\
+static inline int option_##name##_is_some_and(const Option_##name* o, int (*f)(type*)) {\
+    return o->tag == Some && f((type*)&o->payload);\
 }\
 \
-static inline int option_##name##_is_none_or(const Option_##name* o, int (*f)(const type*)) {\
-    return o->tag == None || f((const type*)&o->payload);\
+static inline int option_##name##_is_none_or(const Option_##name* o, int (*f)(type*)) {\
+    return o->tag == None || f((type*)&o->payload);\
 }\
 \
 static inline type option_##name##_unwrap(Option_##name o) {\
@@ -65,7 +65,7 @@ static inline type option_##name##_unwrap_or_zeroed(Option_##name o) {\
 \
 static inline type option_##name##_expect(Option_##name o, char* msg) {\
     if (o.tag == None) {\
-        fprintf(stderr, "option_" #name "_unwrap: called on a None value: %s\n", msg);\
+        fprintf(stderr, "option_" #name "_expect: called on a None value: %s\n", msg);\
         abort();\
     }\
     return o.payload;\
@@ -121,7 +121,7 @@ static inline Option_##name option_##name##_take(Option_##name* o) {\
     return copy;\
 }\
 \
-static inline Option_##name option_##name##_take_if(Option_##name* o, int (*f)(const type*)) {\
+static inline Option_##name option_##name##_take_if(Option_##name* o, int (*f)(type*)) {\
     return option_##name##_is_some_and(o, f) ? option_##name##_take(o) : option_##name##_none();\
 }\
 \
@@ -133,7 +133,7 @@ static inline Option_##name option_##name##_replace(Option_##name* o, type value
 }\
 \
 static inline int option_##name##_eq_with(const Option_##name* o, const Option_##name* other, int (*eq)(const type*, const type*)) {\
-    return o->tag == Some && other->tag == Some ? eq((const type*)&o->payload, (const type*)&other->payload) : false;\
+    return o->tag == Some && other->tag == Some ? eq((const type*)&o->payload, (const type*)&other->payload) : o->tag == other->tag;\
 }\
 \
 static inline int option_##name##_cmp_with(const Option_##name* o, const Option_##name* other, int (*cmp)(const type*, const type*)) {\
@@ -166,15 +166,5 @@ OPTION(unsigned long long, unsigned_long_long);
 OPTION(float, float);
 OPTION(double, double);
 OPTION(long double, long_double);
-
-#define DEBUG
-#ifdef DEBUG
-typedef struct {
-    int y;
-    char* str;
-} test_t;
-
-OPTION(test_t, test);
-#endif
 
 #endif //_OPTION_H
