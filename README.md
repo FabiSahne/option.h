@@ -2,6 +2,54 @@
 
 A lightweight, macro-generated Option\<T\> implementation for C that provides Rust-like optional value handling.
 
+- [Option\<T\> for C](#optiont-for-c)
+  - [Overview](#overview)
+  - [Features](#features)
+  - [Quick Start](#quick-start)
+  - [API Reference](#api-reference)
+    - [Creating Option Values](#creating-option-values)
+      - [`Option_<type> option_<type>_some(value)`](#option_type-option_type_somevalue)
+      - [`Option_<type> option_<type>_none()`](#option_type-option_type_none)
+    - [Checking Option State](#checking-option-state)
+      - [`int option_<type>_is_some(option*)`](#int-option_type_is_someoption)
+      - [`int option_<type>_is_some_and(option*, int (*f)(<type>*))`](#int-option_type_is_some_andoption-int-ftype)
+      - [`int option_<type>_is_none(option*)`](#int-option_type_is_noneoption)
+      - [`int option_<type>_is_none_or(option*, int (*f)(<type>*))`](#int-option_type_is_none_oroption-int-ftype)
+    - [Extracting Values](#extracting-values)
+      - [`<type> option_<type>_unwrap(option)`](#type-option_type_unwrapoption)
+      - [`<type> option_<type>_unwrap_or(option, <type> fallback)`](#type-option_type_unwrap_oroption-type-fallback)
+      - [`<type> option_<type>_unwrap_or_else(option, <type> (*f)())`](#type-option_type_unwrap_or_elseoption-type-f)
+      - [`<type> option_<type>_unwrap_or_zeroed(option)`](#type-option_type_unwrap_or_zeroedoption)
+      - [`<type> option_<type>_unwrap_unchecked(option)`](#type-option_type_unwrap_uncheckedoption)
+        - [Safety](#safety)
+      - [`<type>* option_<type>_as_ptr(option*)`](#type-option_type_as_ptroption)
+    - [Functional Operations](#functional-operations)
+      - [`Option_<type> option_<type>_and(option, option)`](#option_type-option_type_andoption-option)
+      - [`Option_<type> option_<type>_and_then(option, option (*f)(<type>))`](#option_type-option_type_and_thenoption-option-ftype)
+      - [`Option_<type> option_<type>_or(option, option)`](#option_type-option_type_oroption-option)
+      - [`Option_<type> option_<type>_or_else(option, option (*f)())`](#option_type-option_type_or_elseoption-option-f)
+      - [`Option_<type> option_<type>_map(option, <type> (*f)(<type>))`](#option_type-option_type_mapoption-type-ftype)
+      - [`Option_<type> option_<type>_filter(option, int (*pred)(const <type>*))`](#option_type-option_type_filteroption-int-predconst-type)
+      - [`<type>* option_<type>_insert(option*, <type> value)`](#type-option_type_insertoption-type-value)
+      - [`<type>* option_<type>_get_or_insert(option*, <type> value)`](#type-option_type_get_or_insertoption-type-value)
+      - [`Option_<type> option_<type>_take(option*)`](#option_type-option_type_takeoption)
+      - [`Option_<type> option_<type>_take_if(option*, int (*pred)(const <type>*))`](#option_type-option_type_take_ifoption-int-predconst-type)
+      - [`Option_<type> option_<type>_replace(option*, <type> value)`](#option_type-option_type_replaceoption-type-value)
+    - [Comparisons](#comparisons)
+      - [`int option_<type>_eq_with(const option*, const option*, int (*eq)(const <type>*, const <type>*))`](#int-option_type_eq_withconst-option-const-option-int-eqconst-type-const-type)
+      - [`int option_<type>_cmp_with(const option*, const option*, int (*cmp)(const <type>*, const <type>*))`](#int-option_type_cmp_withconst-option-const-option-int-cmpconst-type-const-type)
+  - [Pre-defined Types](#pre-defined-types)
+  - [Creating Custom Option Types](#creating-custom-option-types)
+    - [Renaming Existing Types](#renaming-existing-types)
+  - [Examples](#examples)
+    - [Basic Usage](#basic-usage)
+    - [Safe Division Function](#safe-division-function)
+    - [Using Functional Operations](#using-functional-operations)
+  - ["Panicking"](#panicking)
+  - [License](#license)
+  - [Compatibility](#compatibility)
+
+
 ## Overview
 
 This library provides a type-safe way to handle optional values in C, similar to Rust's `Option<T>` or Haskell's `Maybe`. It uses C macros to generate type-specific Option implementations, avoiding the need for void pointers and providing compile-time type safety.
@@ -21,13 +69,13 @@ int main() {
     // Create Some and None values
     Option_int some_value = option_int_some(42);
     Option_int none_value = option_int_none();
-    
+
     // Check if value exists
     if (option_int_is_some(&some_value)) {
         int value = option_int_unwrap(some_value);
         printf("Value: %d\n", value);
     }
-    
+
     return 0;
 }
 ```
@@ -453,22 +501,22 @@ assert(option_int_cmp_with(&a, &b, int_cmp_fn) == 0);
 
 The following Option types are pre-generated and ready to use:
 
-| C Type | Option Type | Constructor | 
-|--------|-------------|-------------|
-| `char*` | `Option_str` | `option_str_some()` / `option_str_none()` |
-| `char` | `Option_char` | `option_char_some()` / `option_char_none()` |
-| `unsigned char` | `Option_unsigned_char` | `option_unsigned_char_some()` / `option_unsigned_char_none()` |
-| `short` | `Option_short` | `option_short_some()` / `option_short_none()` |
-| `unsigned short` | `Option_unsigned_short` | `option_unsigned_short_some()` / `option_unsigned_short_none()` |
-| `int` | `Option_int` | `option_int_some()` / `option_int_none()` |
-| `unsigned int` | `Option_unsigned_int` | `option_unsigned_int_some()` / `option_unsigned_int_none()` |
-| `long` | `Option_long` | `option_long_some()` / `option_long_none()` |
-| `unsigned long` | `Option_unsigned_long` | `option_unsigned_long_some()` / `option_unsigned_long_none()` |
-| `long long` | `Option_long_long` | `option_long_long_some()` / `option_long_long_none()` |
+| C Type               | Option Type                 | Constructor                                                             |
+| -------------------- | --------------------------- | ----------------------------------------------------------------------- |
+| `char*`              | `Option_str`                | `option_str_some()` / `option_str_none()`                               |
+| `char`               | `Option_char`               | `option_char_some()` / `option_char_none()`                             |
+| `unsigned char`      | `Option_unsigned_char`      | `option_unsigned_char_some()` / `option_unsigned_char_none()`           |
+| `short`              | `Option_short`              | `option_short_some()` / `option_short_none()`                           |
+| `unsigned short`     | `Option_unsigned_short`     | `option_unsigned_short_some()` / `option_unsigned_short_none()`         |
+| `int`                | `Option_int`                | `option_int_some()` / `option_int_none()`                               |
+| `unsigned int`       | `Option_unsigned_int`       | `option_unsigned_int_some()` / `option_unsigned_int_none()`             |
+| `long`               | `Option_long`               | `option_long_some()` / `option_long_none()`                             |
+| `unsigned long`      | `Option_unsigned_long`      | `option_unsigned_long_some()` / `option_unsigned_long_none()`           |
+| `long long`          | `Option_long_long`          | `option_long_long_some()` / `option_long_long_none()`                   |
 | `unsigned long long` | `Option_unsigned_long_long` | `option_unsigned_long_long_some()` / `option_unsigned_long_long_none()` |
-| `float` | `Option_float` | `option_float_some()` / `option_float_none()` |
-| `double` | `Option_double` | `option_double_some()` / `option_double_none()` |
-| `long double` | `Option_long_double` | `option_long_double_some()` / `option_long_double_none()` |
+| `float`              | `Option_float`              | `option_float_some()` / `option_float_none()`                           |
+| `double`             | `Option_double`             | `option_double_some()` / `option_double_none()`                         |
+| `long double`        | `Option_long_double`        | `option_long_double_some()` / `option_long_double_none()`               |
 
 ## Creating Custom Option Types
 
