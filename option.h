@@ -63,6 +63,10 @@ static inline type option_##name##_unwrap_or_zeroed(Option_##name o) {\
     return o.tag == Some ? o.payload : (type) { 0 };\
 }\
 \
+static inline type option_##name##_unwrap_unchecked(Option_##name o) {\
+    return o.payload;\
+}\
+\
 static inline type option_##name##_expect(Option_##name o, char* msg) {\
     if (o.tag == None) {\
         fprintf(stderr, "option_" #name "_expect: called on a None value: %s\n", msg);\
